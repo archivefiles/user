@@ -1,1 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Files</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #f4f5f7;
+    color: #222;
+    min-height: 100vh;
+  }
+  /* ---------- Header ---------- */
+  header {
+    display: flex;
+    align-items: center;
+    background: #1e1f24;
+    color: #fff;
+    padding: 12px 20px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .user-id {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .user-id svg { display: block; }
 
+  /* ---------- File Grid ---------- */
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 30px 16px 60px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 14px;
+  }
+  .file {
+    background: transparent;
+    border: 1px solid transparent;
+    padding: 18px 10px 14px;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    transition: background .15s;
+  }
+  .file:hover { background: #eceef2; }
+  .file.selected { background: #e2e8f4; }
+  .file svg { width: 56px; height: 64px; display: block; margin: 0 auto; }
+  .file-name {
+    margin-top: 10px;
+    font-size: 14px;
+    word-break: break-word;
+    outline: none;
+    min-height: 18px;
+  }
+  .file-name[contenteditable="true"] {
+    background: #fff8d6;
+    border: 1px solid #d9c25a;
+    cursor: text;
+    user-select: text;
+  }
+</style>
+<base target="_blank">
+</head>
+<body>
+
+<header>
+  <div class="user-id">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9aa0aa" stroke-width="2" stroke-linecap="square">
+      <circle cx="12" cy="8" r="4"/>
+      <path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>
+    </svg>
+    1412555132118
+  </div>
+</header>
+
+<main>
+  <div class="grid" id="grid"></div>
+</main>
+
+<script>
+/* ---------- Professional SVG file icons (no emojis) ---------- */
+const ICONS = {
+  images: `<svg viewBox="0 0 48 56" xmlns="http://www.w3.org/2000/svg">
+    <path d="M4 2h24l12 12v38a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V6a4 4 0 0 1 4-4z" fill="#2f6fb2"/>
+    <path d="M28 2l12 12H30a2 2 0 0 1-2-2V2z" fill="#5b94cf"/>
+    <rect x="12" y="22" width="24" height="18" fill="#eaf3fb"/>
+    <circle cx="18.5" cy="28.5" r="3" fill="#2f6fb2"/>
+    <path d="M12 40l7-8 5 5 5-6 7 9v2H12z" fill="#2f6fb2"/>
+  </svg>`,
+  videos: `<svg viewBox="0 0 48 56" xmlns="http://www.w3.org/2000/svg">
+    <path d="M4 2h24l12 12v38a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V6a4 4 0 0 1 4-4z" fill="#7a3ea1"/>
+    <path d="M28 2l12 12H30a2 2 0 0 1-2-2V2z" fill="#a06cc4"/>
+    <rect x="11" y="22" width="26" height="19" fill="#f2e8fa"/>
+    <path d="M20 26l10 5.5L20 37z" fill="#7a3ea1"/>
+  </svg>`,
+  audios: `<svg viewBox="0 0 48 56" xmlns="http://www.w3.org/2000/svg">
+    <path d="M4 2h24l12 12v38a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V6a4 4 0 0 1 4-4z" fill="#1f8a5b"/>
+    <path d="M28 2l12 12H30a2 2 0 0 1-2-2V2z" fill="#4fb285"/>
+    <path d="M17 40V27l13-3v12" fill="none" stroke="#eafaf2" stroke-width="2.5" stroke-linecap="square"/>
+    <circle cx="15" cy="40" r="4" fill="#eafaf2"/>
+    <circle cx="28" cy="36" r="4" fill="#eafaf2"/>
+  </svg>`,
+  documents: `<svg viewBox="0 0 48 56" xmlns="http://www.w3.org/2000/svg">
+    <path d="M4 2h24l12 12v38a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V6a4 4 0 0 1 4-4z" fill="#b07a1f"/>
+    <path d="M28 2l12 12H30a2 2 0 0 1-2-2V2z" fill="#d1a354"/>
+    <rect x="13" y="22" width="22" height="20" fill="#fdf5e6"/>
+    <path d="M17 28h14M17 33h14M17 38h9" stroke="#b07a1f" stroke-width="2.5" stroke-linecap="square"/>
+  </svg>`,
+  texts: `<svg viewBox="0 0 48 56" xmlns="http://www.w3.org/2000/svg">
+    <path d="M4 2h24l12 12v38a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V6a4 4 0 0 1 4-4z" fill="#4a5560"/>
+    <path d="M28 2l12 12H30a2 2 0 0 1-2-2V2z" fill="#7c8894"/>
+    <rect x="13" y="22" width="22" height="20" fill="#eef1f4"/>
+    <path d="M17 27h14M17 32h14M17 37h14" stroke="#4a5560" stroke-width="2.5" stroke-linecap="square"/>
+  </svg>`
+};
+
+const FILES = [
+  { name: "Images",    icon: ICONS.images },
+  { name: "Videos",    icon: ICONS.videos },
+  { name: "Audios",    icon: ICONS.audios },
+  { name: "Documents", icon: ICONS.documents },
+  { name: "Texts",     icon: ICONS.texts }
+];
+
+const grid = document.getElementById("grid");
+
+FILES.forEach(f => {
+  const el = document.createElement("div");
+  el.className = "file";
+  el.innerHTML = `${f.icon}<div class="file-name">${f.name}</div>`;
+  grid.appendChild(el);
+
+  const nameEl = el.querySelector(".file-name");
+  let original = f.name;
+  let clickTimer = null;
+  let renaming = false;
+
+  function openFile() {
+    // Open a normal new tab, like opening a file
+    const win = window.open("", "_blank");
+    if (win) {
+      win.document.write(
+        `<!DOCTYPE html><html><head><title>${original}</title>
+        <style>body{font-family:Arial,sans-serif;background:#f4f5f7;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
+        .box{background:#fff;border:1px solid #d9dbe0;padding:40px 60px;text-align:center}
+        h1{margin:0 0 8px;font-size:22px}p{color:#888;font-size:14px}</style></head>
+        <body><div class="box"><h1>${original}</h1><p>Opened ${original} in a new tab.</p></div></body></html>`
+      );
+      win.document.close();
+    }
+  }
+
+  function startRename() {
+    renaming = true;
+    nameEl.contentEditable = "true";
+    nameEl.classList.add("editing");
+    nameEl.focus();
+    // Select all text like Windows
+    const range = document.createRange();
+    range.selectNodeContents(nameEl);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+
+  function endRename(showMsg) {
+    if (!renaming) return;
+    renaming = false;
+    nameEl.contentEditable = "false";
+    nameEl.classList.remove("editing");
+    if (showMsg) {
+      alert("You haven't access to change file name");
+    }
+    nameEl.textContent = original;   // always revert to old name
+  }
+
+  nameEl.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      endRename(true);       // Enter -> show "no access" message
+    }
+    if (e.key === "Escape") {
+      e.preventDefault();
+      endRename(false);
+    }
+  });
+  nameEl.addEventListener("blur", () => endRename(false)); // click elsewhere -> old name back
+
+  el.addEventListener("click", e => {
+    if (renaming) return;
+    if (clickTimer) {                 // second click = double click
+      clearTimeout(clickTimer);
+      clickTimer = null;
+      if (e.target === nameEl || nameEl.contains(e.target)) startRename();
+    } else {
+      clickTimer = setTimeout(() => { // single click -> open file
+        clickTimer = null;
+        el.classList.add("selected");
+        setTimeout(() => el.classList.remove("selected"), 300);
+        openFile();
+      }, 260);
+    }
+  });
+});
+</script>
+</body>
+</html>
